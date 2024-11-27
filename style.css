@@ -26,6 +26,11 @@ body {
   cursor: pointer;
   font-size: 16px;
   z-index: 10;
+  transition: border-color 0.3s;
+}
+
+.upload-area:hover {
+  border-color: #0056b3;
 }
 
 .file-info {
@@ -83,4 +88,48 @@ body {
 #object-tree li {
   margin: 5px 0;
   cursor: pointer;
+}
+
+/* BoundingBoxerメニュー */
+.bounding-box-menu {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: 1px solid #007bff;
+  z-index: 10;
+  max-width: 300px;
+}
+
+.bounding-box-menu h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.bounding-box-menu .menu-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.bounding-box-menu .menu-button:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+.bounding-box-menu .menu-button:active {
+  transform: scale(0.95);
 }

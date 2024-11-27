@@ -20,12 +20,20 @@
 
   <!-- ファイルアップロード -->
   <div id="upload-area" class="upload-area">
-    Drag & Drop IFC File Here or Click to Upload
+    <label for="ifc-upload" class="upload-label">
+      Drag & Drop IFC File Here or Click to Upload
+    </label>
     <input type="file" id="ifc-upload" accept=".ifc" style="display:none;">
   </div>
 
   <!-- ビューア -->
   <div id="container" class="viewer-container"></div>
+
+  <!-- バウンディングボックスメニュー -->
+  <div id="bounding-box-menu" class="bounding-box-menu">
+    <h3>Bounding Box Options</h3>
+    <button id="fit-bounding-box" class="menu-button">Fit Bounding Box</button>
+  </div>
 
   <!-- スクリプト -->
   <script type="module" src="./main.js"></script>
