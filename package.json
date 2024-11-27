@@ -1,0 +1,19 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@thatopen/components": "^2.3.19",
+    "@thatopen/components-front": "^2.3.14",
+    "@thatopen/fragments": "^2.3.0",
+    "three": "^0.160.1",
+    "web-ifc": "^0.0.59"
+  },
+  "devDependencies": {
+    "vite": "^4.4.0"
+  }
+}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IFC Viewer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ファイル情報 -->
+  <div id="file-info" class="file-info">
+    <p><strong>Loaded IFC File:</strong> <span id="file-name">None</span></p>
+  </div>
+
+  <!-- IFCオブジェクトツリー -->
+  <div id="object-tree-container" class="object-tree-container">
+    <h3>IFC Object Tree</h3>
+    <ul id="object-tree"></ul>
+  </div>
+
+  <!-- ファイルアップロード -->
+  <div id="upload-area" class="upload-area">
+    Drag & Drop IFC File Here or Click to Upload
+    <input type="file" id="ifc-upload" accept=".ifc" style="display:none;">
+  </div>
+
+  <!-- ビューア -->
+  <div id="container" class="viewer-container"></div>
+
+  <!-- スクリプト -->
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
