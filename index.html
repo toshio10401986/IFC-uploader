@@ -35,6 +35,23 @@
     <button id="fit-bounding-box" class="menu-button">Fit Bounding Box</button>
   </div>
 
+  <!-- モデル管理メニュー -->
+  <div class="models-list-menu">
+    <h3>Model Management</h3>
+    <button class="menu-button" id="add-model-button">Add Model</button>
+    <table class="models-list-table">
+      <thead>
+        <tr>
+          <th>Model Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="models-list">
+        <!-- モデルがここに動的に追加されます -->
+      </tbody>
+    </table>
+  </div>
+
   <!-- スクリプト -->
   <script type="module" src="./main.js"></script>
 </body>
