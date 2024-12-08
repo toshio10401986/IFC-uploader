@@ -1,149 +1,176 @@
-import * as THREE from "three";
-import * as OBC from "@thatopen/components";
-import * as OBCF from "@thatopen/components-front";
-import * as CUI from "@thatopen/ui";
-import * as BUI from "@thatopen/ui";
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import * as dat from 'dat.gui';
 
-(async () => {
-  const container = document.getElementById("container");
-  const uploadArea = document.getElementById("upload-area");
+let scene, camera, renderer, controls, culvert;
 
-  const components = new OBC.Components();
+// Parameters for the box culvert
+const parameters = {
+    H: 6,        // 内空高
+    HH2: 1,      // 頂版側ハンチ高さ
+    hH2: 1,      // 底版側ハンチ高さ
+    h1: 0.5,     // 頂版厚
+    h2: 0.5,     // 底版厚
+    t1: 0.5,     // 左側壁厚
+    t2: 0.5,     // 右側壁厚
+    W: 8,        // 内空幅
+    WH1: 1,      // 頂版側ハンチ幅
+    WH2: 1,      // 底版側ハンチ幅
+    length: 10   // 延長
+};
 
-  // ワールドのセットアップ
-  const worlds = components.get(OBC.Worlds);
-  const world = worlds.create();
-  world.scene = new OBC.SimpleScene(components);
-  world.renderer = new OBCF.PostproductionRenderer(components, container);
-  world.camera = new OBC.SimpleCamera(components);
+function init() {
+    // Create the scene
+    scene = new THREE.Scene();
 
-  components.init();
-  world.camera.controls.setLookAt(5, 5, 5, 0, 0, 0);
-  world.scene.setup();
+    // Create the camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(15, 15, 15);
 
-  // グリッドの追加
-  const grids = components.get(OBC.Grids);
-  grids.create(world);
+    // Create the renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('threejs-container').appendChild(renderer.domElement);
 
-  // WASMセットアップ
-  const fragmentIfcLoader = components.get(OBC.IfcLoader);
-  await fragmentIfcLoader.setup({
-    wasm: {
-      path: "https://unpkg.com/web-ifc@0.0.57/",
-      absolute: true,
-    },
-  });
+    // Set background color
+    const rootStyles = getComputedStyle(document.documentElement);
+    const backgroundColor = rootStyles.getPropertyValue('--bg-color').trim();
+    renderer.setClearColor(backgroundColor, 1);
 
-  // FragmentsManagerのセットアップ
-  const fragmentsManager = components.get(OBC.FragmentsManager);
-  fragmentsManager.onFragmentsLoaded.add((model) => {
-    if (world.scene) world.scene.three.add(model);
-  });
+    // OrbitControls for interaction
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
-  // BoundingBoxerのセットアップ
-  const boundingBoxer = components.get(OBC.BoundingBoxer);
+    // Add lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
 
-  // モデル管理リストのセットアップ
-  try {
-    const [modelsList] = CUI.tables.modelsList({
-      components,
-      tags: { schema: true, viewDefinition: false },
-      actions: { download: false },
-    });
+    // Initial Box Culvert
+    culvert = createBoxCulvert(parameters);
+    scene.add(culvert);
 
-    if (!modelsList) {
-      console.error("Failed to initialize models list.");
-      return;
-    }
+    // Handle window resize
+    window.addEventListener('resize', onWindowResize);
 
-    const panel = BUI.Component.create(() => {
-      const [loadIfcBtn] = CUI.buttons.loadIfc({ components });
+    // Add GUI controls
+    setupGUI();
 
-      return BUI.html`
-        <bim-panel label="IFC Models">
-          <bim-panel-section label="Importing">
-            ${loadIfcBtn}
-          </bim-panel-section>
-          <bim-panel-section icon="mage:box-3d-fill" label="Loaded Models">
-            ${modelsList}
-          </bim-panel-section>
-        </bim-panel>
-      `;
-    });
+    // Render loop
+    animate();
+}
 
-    const app = document.createElement("bim-grid");
-    app.layouts = {
-      main: {
-        template: `
-          "panel viewport"
-          / 23rem 1fr
-        `,
-        elements: { panel, viewport: container },
-      },
+function createBoxCulvert(params) {
+    const group = new THREE.Group();
+
+    // Outer shape
+    const outerShape = new THREE.Shape();
+    const halfWidth = params.W / 2 + params.t1 + params.t2;
+    const halfHeight = params.H / 2 + params.h1 + params.h2;
+
+    outerShape.moveTo(-halfWidth, -halfHeight);
+    outerShape.lineTo(-halfWidth + params.WH2, -halfHeight); // Bottom-left haunch
+    outerShape.lineTo(-halfWidth + params.WH2, -halfHeight + params.hH2);
+    outerShape.lineTo(-halfWidth, -halfHeight + params.hH2);
+
+    outerShape.lineTo(-halfWidth, halfHeight - params.HH2); // Left wall
+    outerShape.lineTo(-halfWidth + params.WH1, halfHeight - params.HH2);
+    outerShape.lineTo(-halfWidth + params.WH1, halfHeight);
+    outerShape.lineTo(-halfWidth, halfHeight);
+
+    outerShape.lineTo(halfWidth, halfHeight); // Top wall
+    outerShape.lineTo(halfWidth - params.WH1, halfHeight);
+    outerShape.lineTo(halfWidth - params.WH1, halfHeight - params.HH2);
+    outerShape.lineTo(halfWidth, halfHeight - params.HH2);
+
+    outerShape.lineTo(halfWidth, -halfHeight + params.hH2); // Right wall
+    outerShape.lineTo(halfWidth - params.WH2, -halfHeight + params.hH2);
+    outerShape.lineTo(halfWidth - params.WH2, -halfHeight);
+    outerShape.lineTo(halfWidth, -halfHeight);
+
+    outerShape.closePath();
+
+    const extrudeSettings = {
+        depth: params.length,
+        bevelEnabled: false
     };
 
-    app.layout = "main";
-    document.body.append(app);
-  } catch (error) {
-    console.error("Error setting up models list or panel:", error);
-  }
+    const outerGeometry = new THREE.ExtrudeGeometry(outerShape, extrudeSettings);
+    const outerMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+    const outerMesh = new THREE.Mesh(outerGeometry, outerMaterial);
+    group.add(outerMesh);
 
-  // IFCファイル読み込み関数
-  async function loadIfc(file) {
-    const reader = new FileReader();
+    // Inner shape (void space with haunches)
+    const innerShape = new THREE.Shape();
+    const innerHalfWidth = params.W / 2;
+    const innerHalfHeight = params.H / 2;
 
-    reader.onload = async (e) => {
-      const arrayBuffer = e.target.result;
-      const uint8Array = new Uint8Array(arrayBuffer);
+    innerShape.moveTo(-innerHalfWidth, -innerHalfHeight);
+    innerShape.lineTo(-innerHalfWidth + params.WH2, -innerHalfHeight); // Bottom-left haunch
+    innerShape.lineTo(-innerHalfWidth + params.WH2, -innerHalfHeight + params.hH2);
+    innerShape.lineTo(-innerHalfWidth, -innerHalfHeight + params.hH2);
 
-      // IFCモデルをロード
-      const model = await fragmentIfcLoader.load(uint8Array);
-      if (!model) {
-        alert("Failed to load IFC model.");
-        return;
-      }
-      model.name = "IFC Model";
-      world.scene.three.add(model);
+    innerShape.lineTo(-innerHalfWidth, innerHalfHeight - params.HH2); // Left wall
+    innerShape.lineTo(-innerHalfWidth + params.WH1, innerHalfHeight - params.HH2);
+    innerShape.lineTo(-innerHalfWidth + params.WH1, innerHalfHeight);
+    innerShape.lineTo(-innerHalfWidth, innerHalfHeight);
 
-      // モデルをBoundingBoxerに追加
-      boundingBoxer.add(model);
-    };
+    innerShape.lineTo(innerHalfWidth, innerHalfHeight); // Top wall
+    innerShape.lineTo(innerHalfWidth - params.WH1, innerHalfHeight);
+    innerShape.lineTo(innerHalfWidth - params.WH1, innerHalfHeight - params.HH2);
+    innerShape.lineTo(innerHalfWidth, innerHalfHeight - params.HH2);
 
-    reader.readAsArrayBuffer(file);
-  }
+    innerShape.lineTo(innerHalfWidth, -innerHalfHeight + params.hH2); // Right wall
+    innerShape.lineTo(innerHalfWidth - params.WH2, -innerHalfHeight + params.hH2);
+    innerShape.lineTo(innerHalfWidth - params.WH2, -innerHalfHeight);
+    innerShape.lineTo(innerHalfWidth, -innerHalfHeight);
 
-  // ドラッグアンドドロップのイベントリスナー
-  uploadArea.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    uploadArea.style.borderColor = "#00ff00";
-  });
+    innerShape.closePath();
 
-  uploadArea.addEventListener("dragleave", () => {
-    uploadArea.style.borderColor = "#007bff";
-  });
+    const innerGeometry = new THREE.ExtrudeGeometry(innerShape, extrudeSettings);
+    const innerMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, side: THREE.DoubleSide });
+    const innerMesh = new THREE.Mesh(innerGeometry, innerMaterial);
+    group.add(innerMesh);
 
-  uploadArea.addEventListener("drop", (event) => {
-    event.preventDefault();
-    uploadArea.style.borderColor = "#007bff";
-    const file = event.dataTransfer.files[0];
-    if (file) {
-      loadIfc(file);
-    }
-  });
+    return group;
+}
 
-  // クリックでファイル選択
-  uploadArea.addEventListener("click", () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".ifc";
-    input.onchange = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        loadIfc(file);
-      }
-    };
-    input.click();
-  });
+function updateCulvert() {
+    // Remove the old culvert
+    scene.remove(culvert);
 
-  console.log("IFC Viewer with Model Management is ready!");
-})();
+    // Create and add the new culvert
+    culvert = createBoxCulvert(parameters);
+    scene.add(culvert);
+}
+
+function setupGUI() {
+    const gui = new dat.GUI();
+    gui.add(parameters, 'H', 2, 15, 0.1).name('内空高 H').onChange(updateCulvert);
+    gui.add(parameters, 'HH2', 0, 5, 0.1).name('頂版側ハンチ高さ HH2').onChange(updateCulvert);
+    gui.add(parameters, 'hH2', 0, 5, 0.1).name('底版側ハンチ高さ hH2').onChange(updateCulvert);
+    gui.add(parameters, 'h1', 0.1, 2, 0.1).name('頂版厚 h1').onChange(updateCulvert);
+    gui.add(parameters, 'h2', 0.1, 2, 0.1).name('底版厚 h2').onChange(updateCulvert);
+    gui.add(parameters, 't1', 0.1, 2, 0.1).name('左側壁厚 t1').onChange(updateCulvert);
+    gui.add(parameters, 't2', 0.1, 2, 0.1).name('右側壁厚 t2').onChange(updateCulvert);
+    gui.add(parameters, 'W', 2, 15, 0.1).name('内空幅 W').onChange(updateCulvert);
+    gui.add(parameters, 'WH1', 0, 5, 0.1).name('頂版側ハンチ幅 WH1').onChange(updateCulvert);
+    gui.add(parameters, 'WH2', 0, 5, 0.1).name('底版側ハンチ幅 WH2').onChange(updateCulvert);
+    gui.add(parameters, 'length', 1, 100, 1).name('延長 Length').onChange(updateCulvert);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// Initialize the scene
+init();

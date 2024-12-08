@@ -11,11 +11,20 @@
     "@thatopen/components-front": "^2.3.14",
     "@thatopen/fragments": "^2.3.0",
     "@thatopen/ui": "^2.3.2",
+    "dat.gui": "^0.7.9",
     "stats.js": "^0.17.0",
-    "three": "^0.160.1",
-    "web-ifc": "^0.0.59"
+    "three": "^0.171.0",
+    "three-csg-ts": "^3.1.0",
+    "three-mesh-bvh": "^0.8.3",
+    "web-ifc": "^0.0.59",
+    "web-ifc-three": "^0.0.126"
   },
   "devDependencies": {
     "vite": "^4.4.0"
-  }
+  },
+  "description": "",
+  "main": "main.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

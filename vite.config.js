@@ -1,11 +1,7 @@
-import { defineConfig } from "vite";
-import path from "path";
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  resolve: {
-    alias: {
-      "@thatopen/components-front": path.resolve(__dirname, "node_modules/@thatopen/components-front"),
-      three: "three",
+    optimizeDeps: {
+        include: ['three', 'three-mesh-bvh'], // 配列形式で複数の依存関係を指定
     },
-  },
 });
